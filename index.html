@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#4CAF50" />
+  <title>Study Helper — Goals & Pomodoro</title>
+
+  <!-- ✅ PWA Setup -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIUlEQVQoU2NkYGD4z0AEMHGAgYGB4T8GGDAwMA0jA8UAAAdAAH2V1+0AAAAAElFTkSuQmCC" type="image/png" />
+  <link rel="apple-touch-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAIUlEQVQoU2NkYGD4z0AEMHGAgYGB4T8GGDAwMA0jA8UAAAdAAH2V1+0AAAAAElFTkSuQmCC" />
+
+  <style>
+    :root{
+      --bg:#0f1724; --card:#0b1220; --muted:#9aa7b2; --accent:#4fd1c5;
+      --glass: rgba(255,255,255,0.03);
+    }
+    [data-theme="light"]{
+      --bg:#f6f8fb; --card:#ffffff; --muted:#556; --accent:#0ea5a4; --glass: rgba(0,0,0,0.03);
+    }
+    *{box-sizing:border-box;font-family:Inter,system-ui,Arial,Helvetica,sans-serif}
+    body{margin:0;background:var(--bg);color:#e6eef6;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:18px}
+    .wrap{width:100%;max-width:1100px}
+    header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px}
+    h1{font-size:20px;margin:0}
+    .controls{display:flex;gap:8px;align-items:center}
+    button{background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:8px 10px;border-radius:10px;cursor:pointer}
+    .grid{display:grid;grid-template-columns:1fr 360px;gap:12px}
+    @media(max-width:920px){.grid{grid-template-columns:1fr;}}
+    .card{background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(0,0,0,0.25)}
+    .goals-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+    .goal{display:flex;align-items:center;gap:8px;padding:8px;border-radius:8px;background:linear-gradient(180deg,rgba(255,255,255,0.01),transparent)}
+    .goal .title{flex:1}
+    .small{font-size:13px;color:var(--muted)}
+    .muted{color:var(--muted)}
+    input[type="text"]{width:100%;padding:8px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    .flex-row{display:flex;gap:8px;align-items:center}
+    .stat{display:flex;flex-direction:column;gap:6px}
+    .big{font-size:26px;font-weight:700}
+    .progress{height:10px;background:rgba(255,255,255,0.05);border-radius:8px;overflow:hidden}
+    .progress > b{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#7ef0e0);width:0%}
+    .timer{display:flex;flex-direction:column;align-items:center;gap:8px}
+    .time-display{font-size:34px;font-weight:700}
+    .timer-controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+    textarea{width:100%;min-height:110px;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
+    footer{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
+    .pill{padding:6px 8px;border-radius:999px;background:rgba(255,255,255,0.02);font-size:13px}
+    .badge{background:rgba(0,0,0,0.25);padding:4px 8px;border-radius:8px}
+    .row{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body data-theme="dark">
+<noscript>This app needs JavaScript enabled to work.</noscript>
+
+<div class="wrap">
+<header>
+  <div>
+    <h1>Study Helper</h1>
+    <div class="small muted">Daily goals • Pomodoro • Notes • Streaks</div>
+  </div>
+  <div class="controls">
+    <button id="themeBtn">Toggle Theme</button>
+    <button id="clearBtn" title="Clear today's data">Clear Data</button>
+    <div class="pill" id="quoteArea">“Focus on progress, not perfection.”</div>
+  </div>
+</header>
+
+<main class="grid">
+<div>
+<section class="card">
+  <div class="row" style="justify-content:space-between;align-items:center">
+    <div><strong>Daily Goals</strong><div class="small muted">Add tasks you want to finish today</div></div>
+    <div class="small muted">Streak: <span id="streak">0</span> days</div>
+  </div>
+  <form id="goalForm" style="margin-top:10px;display:flex;gap:8px">
+    <input id="goalInput" type="text" placeholder="Add new goal (e.g. Read 2 chapters)" />
+    <button type="submit">Add</button>
+  </form>
+  <div class="goals-list" id="goalsList"></div>
+<div style="margin-top:12px" class="row">
+    <div class="stat" style="flex:1">
+      <div class="small muted">Progress</div>
+      <div class="progress"><b id="progressBar"></b></div>
+    </div>
+    <div style="min-width:110px;text-align:right">
+      <div class="small muted">Completed</div>
+      <div class="big" id="completedCount">0/0</div>
+    </div>
+  </div>
+</section>
+
+<section class="card" style="margin-top:12px">
+  <strong>Notes</strong>
+  <div class="small muted">Quick notes saved locally</div>
+  <textarea id="notesArea" placeholder="Write anything..."></textarea>
+</section>
+</div>
+
+<aside>
+  <section class="card timer">
+    <div style="width:100%;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <strong>Pomodoro</strong>
+        <div class="small muted">Focus & break cycles</div>
+      </div>
+      <div class="badge" id="modeBadge">Work</div>
+    </div>
+
+    <div style="width:100%;display:flex;gap:8px;margin-top:8px;align-items:center">
+      <div style="flex:1">
+        <label class="small muted">Work (min)</label>
+        <input id="workInput" type="number" value="25" min="1" style="width:100%;padding:6px;border-radius:8px" />
+      </div>
+      <div style="width:90px">
+        <label class="small muted">Break (min)</label>
+        <input id="breakInput" type="number" value="5" min="1" style="width:100%;padding:6px;border-radius:8px" />
+      </div>
+    </div>
+
+    <div style="margin-top:12px;text-align:center">
+      <div class="time-display" id="timeDisplay">25:00</div>
+      <div class="timer-controls">
+        <button id="startBtn">Start</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="resetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div style="margin-top:12px;width:100%" class="row">
+      <div style="flex:1">
+        <div class="small muted">Today's study time</div>
+        <div class="big" id="todayTime">0m</div>
+      </div>
+      <div style="flex:1">
+        <div class="small muted">Goals %</div>
+        <div class="big" id="goalsPercent">0%</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:12px">
+    <strong>Quick Actions</strong>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="completeAll">Mark all done</button>
+      <button id="undoAll">Unmark all</button>
+      <button id="exportBtn">Export Data</button>
+      <button id="importBtn">Import Data</button>
+    </div>
+  </section>
+</aside>
+</main>
+
+<footer>
+  <div class="small muted">Made for focused studying • Data stored locally in this browser</div>
+</footer>
+</div>
+<script>
+/* ==============================
+   STUDY HELPER – MAIN SCRIPT
+   ============================== */
+
+// DOM elements
+const goalForm = document.getElementById("goalForm");
+const goalInput = document.getElementById("goalInput");
+const goalsList = document.getElementById("goalsList");
+const progressBar = document.getElementById("progressBar");
+const completedCount = document.getElementById("completedCount");
+const notesArea = document.getElementById("notesArea");
+const workInput = document.getElementById("workInput");
+const breakInput = document.getElementById("breakInput");
+const timeDisplay = document.getElementById("timeDisplay");
+const modeBadge = document.getElementById("modeBadge");
+const todayTime = document.getElementById("todayTime");
+const goalsPercent = document.getElementById("goalsPercent");
+const themeBtn = document.getElementById("themeBtn");
+const clearBtn = document.getElementById("clearBtn");
+const quoteArea = document.getElementById("quoteArea");
+const completeAllBtn = document.getElementById("completeAll");
+const undoAllBtn = document.getElementById("undoAll");
+const exportBtn = document.getElementById("exportBtn");
+const importBtn = document.getElementById("importBtn");
+
+// Data
+let goals = JSON.parse(localStorage.getItem("goals") || "[]");
+let streak = parseInt(localStorage.getItem("streak") || "0");
+let notes = localStorage.getItem("notes") || "";
+let workDuration = parseInt(localStorage.getItem("workDuration") || "25");
+let breakDuration = parseInt(localStorage.getItem("breakDuration") || "5");
+let totalStudy = parseInt(localStorage.getItem("totalStudy") || "0");
+let isWork = true;
+let remaining = workDuration * 60;
+let timer = null;
+
+// ======================
+// Daily Quotes
+// ======================
+const quotes = [
+  "Focus on progress, not perfection.",
+  "Small steps every day lead to big results.",
+  "Discipline beats motivation.",
+  "Study smarter, not longer.",
+  "Your future self will thank you."
+];
+quoteArea.textContent = quotes[Math.floor(Math.random() * quotes.length)];
+
+// ======================
+// Goals
+// ======================
+function saveGoals() { localStorage.setItem("goals", JSON.stringify(goals)); }
+function renderGoals() {
+  goalsList.innerHTML = "";
+  goals.forEach((g, i) => {
+    const div = document.createElement("div");
+    div.className = "goal";
+    div.innerHTML = `
+      <input type="checkbox" ${g.done ? "checked" : ""} data-idx="${i}" />
+      <span class="title" style="text-decoration:${g.done ? "line-through" : "none"}">${g.text}</span>
+      <button data-del="${i}">🗑</button>`;
+    goalsList.appendChild(div);
+  });
+  updateProgress();
+}
+function updateProgress() {
+  const total = goals.length;
+  const done = goals.filter(g => g.done).length;
+  progressBar.style.width = total ? `${(done / total) * 100}%` : "0%";
+  completedCount.textContent = `${done}/${total}`;
+  goalsPercent.textContent = total ? Math.round((done / total) * 100) + "%" : "0%";
+  localStorage.setItem("lastUpdated", new Date().toDateString());
+}
+goalForm.addEventListener("submit", e => {
+  e.preventDefault();
+  const text = goalInput.value.trim();
+  if (!text) return;
+  goals.push({ text, done: false });
+  goalInput.value = "";
+  saveGoals(); renderGoals();
+});
+goalsList.addEventListener("change", e => {
+  if (e.target.dataset.idx !== undefined) {
+    goals[e.target.dataset.idx].done = e.target.checked;
+    saveGoals(); renderGoals();
+  }
+});
+goalsList.addEventListener("click", e => {
+  if (e.target.dataset.del !== undefined) {
+    goals.splice(e.target.dataset.del, 1);
+    saveGoals(); renderGoals();
+  }
+});
+completeAllBtn.onclick = () => { goals.forEach(g => g.done = true); saveGoals(); renderGoals(); };
+undoAllBtn.onclick = () => { goals.forEach(g => g.done = false); saveGoals(); renderGoals(); };
+
+// ======================
+// Notes
+// ======================
+notesArea.value = notes;
+notesArea.addEventListener("input", () => {
+  localStorage.setItem("notes", notesArea.value);
+});
+
+// ======================
+// Timer (Pomodoro)
+// ======================
+function updateTimerDisplay() {
+  const m = String(Math.floor(remaining / 60)).padStart(2, "0");
+  const s = String(remaining % 60).padStart(2, "0");
+  timeDisplay.textContent = `${m}:${s}`;
+}
+function tick() {
+  if (remaining > 0) {
+    remaining--;
+    updateTimerDisplay();
+  } else {
+    clearInterval(timer); timer = null;
+    isWork = !isWork;
+    modeBadge.textContent = isWork ? "Work" : "Break";
+    modeBadge.style.background = isWork ? "#4fd1c5" : "#fca5a5";
+    remaining = (isWork ? workDuration : breakDuration) * 60;
+    if (!isWork) totalStudy += workDuration;
+    localStorage.setItem("totalStudy", totalStudy);
+    todayTime.textContent = totalStudy + "m";
+    alert(isWork ? "Break over, back to work!" : "Good job! Take a break!");
+  }
+}
+document.getElementById("startBtn").onclick = () => { if (!timer) timer = setInterval(tick, 1000); };
+document.getElementById("pauseBtn").onclick = () => { clearInterval(timer); timer = null; };
+document.getElementById("resetBtn").onclick = () => {
+  clearInterval(timer); timer = null;
+  remaining = workDuration * 60; updateTimerDisplay();
+};
+workInput.value = workDuration; breakInput.value = breakDuration;
+workInput.onchange = () => { workDuration = parseInt(workInput.value); localStorage.setItem("workDuration", workDuration); };
+breakInput.onchange = () => { breakDuration = parseInt(breakInput.value); localStorage.setItem("breakDuration", breakDuration); };
+
+// ======================
+// Theme + Clear + Export
+// ======================
+themeBtn.onclick = () => {
+  const body = document.body;
+  const mode = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  body.setAttribute("data-theme", mode);
+  localStorage.setItem("theme", mode);
+};
+document.body.setAttribute("data-theme", localStorage.getItem("theme") || "dark");
+clearBtn.onclick = () => {
+  if (confirm("Clear today's goals, notes, and time?")) {
+    goals = []; notesArea.value = ""; totalStudy = 0;
+    saveGoals(); localStorage.removeItem("notes"); localStorage.removeItem("totalStudy");
+    renderGoals(); todayTime.textContent = "0m"; progressBar.style.width = "0%";
+  }
+};
+exportBtn.onclick = () => {
+  const data = { goals, notes: notesArea.value, totalStudy };
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "study-data.json";
+  a.click();
+};
+importBtn.onclick = async () => {
+  const input = document.createElement("input");
+  input.type = "file"; input.accept = "application/json";
+  input.onchange = async e => {
+    const file = e.target.files[0];
+    const text = await file.text();
+    const data = JSON.parse(text);
+    goals = data.goals || []; notesArea.value = data.notes || "";
+    totalStudy = data.totalStudy || 0;
+    saveGoals(); localStorage.setItem("notes", notesArea.value);
+    localStorage.setItem("totalStudy", totalStudy);
+    renderGoals();
+  };
+  input.click();
+};
+
+// ======================
+// Initialization
+// ======================
+renderGoals();
+todayTime.textContent = totalStudy + "m";
+updateTimerDisplay();
+modeBadge.textContent = "Work";
+modeBadge.style.background = "#4fd1c5";
+updateProgress();
+
+// ======================
+// Streak logic
+// ======================
+const lastDate = localStorage.getItem("lastUpdated");
+const today = new Date().toDateString();
+if (lastDate && lastDate !== today) {
+  const completed = goals.length && goals.every(g => g.done);
+  if (completed) streak++;
+  else streak = 0;
+  localStorage.setItem("streak", streak);
+  localStorage.setItem("lastUpdated", today);
+}
+document.getElementById("streak").textContent = streak;
+
+// ======================
+// PWA: Service Worker
+// ======================
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(() => console.log("Service worker registered"))
+      .catch(err => console.log("SW registration failed:", err));
+  });
+}
+</script>
+</body>
+</html>
